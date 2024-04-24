@@ -10,8 +10,18 @@
     "test": "jest"
   },
   "dependencies": {
+    "@babel/plugin-proposal-decorators": "^7.24.1",
+    "@react-native-picker/picker": "^2.7.5",
+    "@realm/react": "^0.6.2",
+    "dayjs": "^1.11.10",
     "react": "18.2.0",
-    "react-native": "0.74.0"
+    "react-native": "0.74.0",
+    "react-native-date-picker": "^5.0.2",
+    "react-native-get-random-values": "^1.11.0",
+    "react-native-picker-select": "^9.1.3",
+    "react-native-reanimated": "v3.9.0-rc.0",
+    "react-native-restart": "^0.0.27",
+    "realm": "^12.7.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
@@ -21,6 +31,7 @@
     "@react-native/eslint-config": "0.74.81",
     "@react-native/metro-config": "0.74.81",
     "@react-native/typescript-config": "0.74.81",
+    "@realm/babel-plugin": "^0.2.0",
     "@types/react": "^18.2.6",
     "@types/react-test-renderer": "^18.0.0",
     "babel-jest": "^29.6.3",
