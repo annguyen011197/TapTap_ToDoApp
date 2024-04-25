@@ -7,14 +7,14 @@ import {
 } from 'react-native';
 import {BSON} from 'realm';
 import AppBtn from '../../cpns/AppBtn/AppBtn';
-import Row from '../../cpns/Flex/Row';
 import ScreenLayout from '../../cpns/ScreenLayout/ScreenLayout';
 import Spacer from '../../cpns/Spacer/Spacer';
 import {Priority} from '../../models/Note';
-import {delay} from '../../utils/utils';
 import NoteLayoutWrapper from './NoteLayoutWrapper';
 import {useMainList} from './hooks/hook';
 import {EditContext} from './hooks/useEditContext';
+import Col from '../../cpns/Flex/Col';
+import {delay} from '../../utils/utils';
 
 const MainScreen = () => {
   const [listData, addNewData] = useMainList();
@@ -28,22 +28,19 @@ const MainScreen = () => {
           content: `Task ${length + 1}`,
           expiration: new Date(),
         });
-        listRef.current?.scrollToEnd();
         await delay(500);
         setEditId(id);
-        listRef.current?.scrollToEnd();
       })(),
     [addNewData, listData.length],
   );
 
   const renderItem: ListRenderItem<BSON.ObjectId> = useCallback(
     (item: ListRenderItemInfo<BSON.ObjectId>) => {
-      console.log('renderItem');
       return (
-        <Row>
+        <Col>
           <NoteLayoutWrapper data={item.item} />
           <Spacer height={24} />
-        </Row>
+        </Col>
       );
     },
     [],

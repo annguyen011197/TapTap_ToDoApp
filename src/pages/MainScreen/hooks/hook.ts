@@ -26,7 +26,6 @@ const useNoteInput = (value: BSON.ObjectId) => {
   };
   const deleteData = () => {
     realm.write(() => {
-      console.log('delete ' + note?._id);
       realm.delete(note);
     });
   };

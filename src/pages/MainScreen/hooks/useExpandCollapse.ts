@@ -1,9 +1,11 @@
-import {useCallback, useEffect, useState} from 'react';
-import useEditContext from './useEditContext';
+import {useCallback, useRef, useState} from 'react';
 import {BSON} from 'realm';
+import {useEffectAfterMount} from '../../../utils/utils';
+import useEditContext from './useEditContext';
 
 const useExpandCollapse = (data: BSON.ObjectId) => {
   const {id: editId, onNewEdit} = useEditContext();
+  const layoutComplete = useRef(false);
   const [isEdit, setIsEdit] = useState(false);
 
   const handle = useCallback((): boolean => {
@@ -13,7 +15,7 @@ const useExpandCollapse = (data: BSON.ObjectId) => {
     return newValue;
   }, [data, isEdit, onNewEdit]);
 
-  useEffect(() => {
+  useEffectAfterMount(() => {
     if (editId === undefined) {
       return;
     }
@@ -23,7 +25,7 @@ const useExpandCollapse = (data: BSON.ObjectId) => {
     }
   }, [data, editId, handle, isEdit]);
 
-  return [isEdit, handle] as const;
+  return {isEdit, handle, layoutComplete};
 };
 
 export default useExpandCollapse;

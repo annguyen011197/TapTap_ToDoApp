@@ -7,7 +7,7 @@ interface Props extends ViewProps {
 }
 const AppBtn = ({title, onPress, style: pStyle}: Props) => {
   const viewStyle = StyleSheet.flatten([style.button, pStyle]);
-  console.log('Render AppBtn ' + title);
+
   return (
     <TouchableOpacity style={viewStyle} onPress={onPress}>
       <Text style={style.text}>{title}</Text>

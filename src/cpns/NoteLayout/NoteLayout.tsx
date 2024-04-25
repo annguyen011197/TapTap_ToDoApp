@@ -1,30 +1,25 @@
 //import liraries
 import dayjs from 'dayjs';
-import React, {useImperativeHandle, useMemo} from 'react';
+import React, {useImperativeHandle, useMemo, useRef} from 'react';
 import {
+  Animated,
   Image,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
   ViewProps,
+  useAnimatedValue,
 } from 'react-native';
-import Animated, {
-  AnimatedRef,
-  runOnJS,
-  useAnimatedRef,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 import {Priority} from '../../models/Note';
+import {useAnimationValueXY} from '../../utils/utils';
 import Col from '../Flex/Col';
 import Flex from '../Flex/Flex';
 import Row from '../Flex/Row';
 import {INoteProps} from '../props/prop';
 
 export interface NoteType {
-  title: AnimatedRef<any>;
+  title: React.RefObject<any>;
   animateHide(
     targetTitlePosition: {
       position: {x: number; y: number};
@@ -61,49 +56,74 @@ const DuoDateText = ({value}: {value: Date}) => {
 
 const NoteLayout = React.forwardRef<NoteType, NoteProps>((props, ref) => {
   const {data} = props;
-  const basePosition = {x: 60, y: 24};
-  //   const basePosition = {x: 0, y: 0};
-  const titleRef = useAnimatedRef();
-  const titleOpacity = useSharedValue(1);
-  const containerOpacity = useSharedValue(1);
+  const title = useRef(null);
 
-  const posX = useSharedValue(basePosition.x);
-  const posY = useSharedValue(basePosition.y);
+  const titleOpacity = useAnimatedValue(1);
+  const containerOpacity = useAnimatedValue(1);
 
-  const titleStyle = useAnimatedStyle(() => ({
-    flex: 1,
-    opacity: titleOpacity.value,
-    position: 'absolute',
-    top: posY.value,
-    left: posX.value,
-  }));
+  const pos = useAnimationValueXY();
+
+  // const posX = useAnimatedValue(basePosition.x);
+  // const posY = useAnimatedValue(basePosition.y);
 
   useImperativeHandle(ref, () => ({
-    title: titleRef,
+    title,
     animateHide(targetPosition, callback = () => {}) {
-      console.log(`Target layout ${JSON.stringify(targetPosition)}`);
-      posX.value = withTiming(
-        targetPosition.position.x,
-        {duration: 500},
-        () => {
-          titleOpacity.value = 0;
-          runOnJS(callback)();
-        },
-      );
-      posY.value = withTiming(targetPosition.position.y, {duration: 500});
-      containerOpacity.value = withTiming(0);
+      Animated.sequence([
+        Animated.timing(pos, {
+          toValue: {
+            x: targetPosition.position.x,
+            y: targetPosition.position.y,
+          },
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(containerOpacity, {
+          toValue: 0,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start(callback);
     },
     animateShow() {
-      posX.value = withTiming(basePosition.x);
-      posY.value = withTiming(basePosition.y);
-      containerOpacity.value = withTiming(1, {duration: 300});
-      titleOpacity.value = 1;
+      Animated.parallel([
+        Animated.timing(pos, {
+          toValue: {
+            x: 0,
+            y: 0,
+          },
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(containerOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(titleOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
     },
   }));
 
-  const containerStyle = useAnimatedStyle(() => ({
-    opacity: containerOpacity.value,
-  }));
+  const containerStyle = useMemo(
+    () => ({
+      opacity: containerOpacity,
+    }),
+    [containerOpacity],
+  );
+
+  const titleStyle = useMemo(
+    () => ({
+      flex: 1,
+      opacity: titleOpacity,
+      transform: [{translateX: pos.x}, {translateY: pos.y}],
+    }),
+    [pos.x, pos.y, titleOpacity],
+  );
 
   return (
     <Animated.View style={styles.container}>
@@ -112,7 +132,11 @@ const NoteLayout = React.forwardRef<NoteType, NoteProps>((props, ref) => {
           <View style={styles.squareItem} />
           <Col>
             <Row style={styles.titleAndEdit}>
-              <Flex></Flex>
+              <Animated.View style={titleStyle}>
+                <Text numberOfLines={1} style={styles.title} ref={title}>
+                  {data.content}
+                </Text>
+              </Animated.View>
               <TouchableOpacity onPress={props.onEditRequest}>
                 <Image
                   style={styles.icon}
@@ -128,12 +152,6 @@ const NoteLayout = React.forwardRef<NoteType, NoteProps>((props, ref) => {
             </Row>
           </Col>
         </Row>
-      </Animated.View>
-
-      <Animated.View ref={titleRef} style={titleStyle}>
-        <Text numberOfLines={1} style={styles.title}>
-          {data.content}
-        </Text>
       </Animated.View>
     </Animated.View>
   );

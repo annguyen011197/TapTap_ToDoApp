@@ -1,30 +1,29 @@
 import {useCallback, useRef} from 'react';
-import {useDerivedValue, useSharedValue} from 'react-native-reanimated';
-import {asyncMeasureLayout, delay} from '../../../utils/utils';
+import {Animated, View, useAnimatedValue} from 'react-native';
 import {NoteInputType} from '../../../cpns/NoteInputLayout/NoteInputLayout';
-import {View} from 'react-native';
 import {NoteType} from '../../../cpns/NoteLayout/NoteLayout';
+import {asyncMeasureLayout, delay} from '../../../utils/utils';
 
-const useAnimationHandler = (isEdit: boolean) => {
+const useAnimationHandler = () => {
   const noteInputRef = useRef<NoteInputType>(null);
   const containerRef = useRef<View>(null);
   const noteViewerRef = useRef<NoteType>(null);
-  const heightViewer = useSharedValue(0);
-  const heightInput = useSharedValue(0);
-  const height = useDerivedValue(() => {
-    return isEdit ? heightInput.value : heightViewer.value;
-  });
+  const heightViewer = useRef(0);
+  const heightInput = useRef(0);
+  const height = useAnimatedValue(150);
 
   const updateViewerHeight = useCallback(
     (value: number) => {
-      heightViewer.value = value;
+      // heightViewer.setValue(value);
+      heightViewer.current = value;
     },
     [heightViewer],
   );
 
   const updateInputHeight = useCallback(
     (value: number) => {
-      heightInput.value = value;
+      // heightInput.setValue(value);
+      heightInput.current = value;
     },
     [heightInput],
   );
@@ -38,29 +37,39 @@ const useAnimationHandler = (isEdit: boolean) => {
         noteViewerRef.current?.title,
       );
       const newPosition = {
-        x: targetLayout.position.x,
-        y:
-          targetLayout.position.y +
-          (targetLayout.size.height - currentLayout.size.height) / 2,
+        x: targetLayout.position.x - currentLayout.position.x,
+        y: targetLayout.position.y - currentLayout.position.y,
       };
+
+      Animated.timing(height, {
+        toValue: heightInput.current,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
 
       noteViewerRef.current?.animateHide({
         position: newPosition,
       });
-      await delay(300);
+      await delay(400);
       noteInputRef.current?.animateShow();
     };
-    execution();
-  }, []);
+    execution().catch(e => console.error(e));
+  }, [height]);
 
   const triggerCollapse = useCallback(() => {
     const execution = async () => {
-      noteViewerRef.current?.animateShow();
-
       noteInputRef.current?.animateHide();
+      await delay(300);
+      Animated.timing(height, {
+        toValue: heightViewer.current,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
+
+      noteViewerRef.current?.animateShow();
     };
-    execution();
-  }, []);
+    execution().catch(e => console.error(e));
+  }, [height]);
 
   return {
     noteInputRef,

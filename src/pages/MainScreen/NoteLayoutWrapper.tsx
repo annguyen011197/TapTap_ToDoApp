@@ -1,16 +1,16 @@
-import React, {memo, useCallback, useEffect} from 'react';
-import {LayoutChangeEvent, StyleSheet, View} from 'react-native';
-import Animated, {useAnimatedStyle, withTiming} from 'react-native-reanimated';
+import React, {memo, useCallback} from 'react';
+import {Animated, LayoutChangeEvent, StyleSheet, View} from 'react-native';
 import {BSON} from 'realm';
 import NoteInputLayout from '../../cpns/NoteInputLayout/NoteInputLayout';
 import NoteLayout from '../../cpns/NoteLayout/NoteLayout';
 import {INote} from '../../models/Note';
+import {useEffectAfterMount} from '../../utils/utils';
 import {useNoteInput} from './hooks/hook';
 import useAnimationHandler from './hooks/useAnimationHandler';
 import useExpandCollapse from './hooks/useExpandCollapse';
 const NoteLayoutWrapper = ({data}: {data: BSON.ObjectId}) => {
   const {writeData, deleteData, note} = useNoteInput(data);
-  const [isEdit, handle] = useExpandCollapse(data);
+  const {isEdit, handle, layoutComplete} = useExpandCollapse(data);
   const {
     height,
     noteInputRef,
@@ -20,26 +20,9 @@ const NoteLayoutWrapper = ({data}: {data: BSON.ObjectId}) => {
     triggerCollapse,
     updateViewerHeight,
     updateInputHeight,
-  } = useAnimationHandler(isEdit);
+  } = useAnimationHandler();
 
-  const style = useAnimatedStyle(() => {
-    if (height.value > 0) {
-      return {
-        height: withTiming(height.value, {duration: 300}),
-        backgroundColor: 'white',
-        borderRadius: 15,
-        flex: 1,
-      };
-    } else {
-      return {
-        backgroundColor: 'white',
-        borderRadius: 15,
-        flex: 1,
-      };
-    }
-  });
-
-  useEffect(() => {
+  useEffectAfterMount(() => {
     if (isEdit) {
       triggerExpand();
     } else {
@@ -57,8 +40,9 @@ const NoteLayoutWrapper = ({data}: {data: BSON.ObjectId}) => {
   const onLayoutInput = useCallback(
     (ev: LayoutChangeEvent) => {
       updateInputHeight(ev.nativeEvent.layout.height);
+      layoutComplete.current = true;
     },
-    [updateInputHeight],
+    [layoutComplete, updateInputHeight],
   );
 
   const onDoneEdit = useCallback(
@@ -73,8 +57,15 @@ const NoteLayoutWrapper = ({data}: {data: BSON.ObjectId}) => {
     deleteData();
   }, [deleteData]);
   if (!note) {
-    return <View></View>;
+    return <View />;
   }
+
+  const style = StyleSheet.flatten([
+    styles.container,
+    {
+      height: height,
+    },
+  ]);
 
   return (
     <Animated.View style={style} ref={containerRef}>
@@ -107,10 +98,14 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
   },
+  container: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    flex: 1,
+  },
 });
 
 export default memo(NoteLayoutWrapper, (prev, next) => {
   const areEqual = prev.data.equals(next.data);
-  console.log(`Compare ${prev.data} ${next.data} ${areEqual}`);
   return areEqual;
 });

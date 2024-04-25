@@ -2,14 +2,15 @@ import dayjs from 'dayjs';
 import React, {
   useCallback,
   useContext,
-  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
   useState,
 } from 'react';
 import {
+  Animated,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -17,14 +18,10 @@ import {
   TouchableOpacity,
   View,
   ViewProps,
+  useAnimatedValue,
 } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import RNPickerSelect from 'react-native-picker-select';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
 import {INote, Priority} from '../../models/Note';
 import AppBtn from '../AppBtn/AppBtn';
 import Col from '../Flex/Col';
@@ -64,27 +61,28 @@ const NoteInputLayout = React.forwardRef<
     priority: data.priority,
   });
   const textInput = useRef<View>(null);
-  const opacity = useSharedValue(0);
+  const opacity = useAnimatedValue(0);
   useImperativeHandle(ref, () => ({
     appTextInput: textInput,
     animateShow: () => {
-      console.log('animateShow');
-      opacity.value = withTiming(1);
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
     },
     animateHide: () => {
-      opacity.value = withTiming(0);
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: false,
+      }).start();
     },
   }));
 
-  const animateStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
-
-  useEffect(() => {
-    console.log(`Form change ${JSON.stringify(form)}`);
-  }, [form]);
+  const animateStyle = {
+    opacity: opacity,
+  };
 
   const onDone = useCallback(() => {
     props.onDone({
@@ -118,11 +116,11 @@ const NoteInputLayout = React.forwardRef<
           </Row>
           <Seperator />
           <Row style={styles.infoLayout}>
-            <Text style={styles.propertyTitle}>Mực độ ưu tiên</Text>
+            <Text style={styles.propertyTitle}>Mức độ ưu tiên</Text>
             <PrioritySelect />
           </Row>
           <Seperator />
-          <View style={{alignItems: 'center', marginTop: 22}}>
+          <View style={styles.cotainer}>
             <AppBtn title={'Xong'} onPress={onDone} style={styles.button} />
           </View>
         </Col>
@@ -228,6 +226,29 @@ const PrioritySelect = () => {
     },
     [form, setForm],
   );
+  if (Platform.OS === 'ios') {
+    return (
+      <Pressable
+        style={styles.prioritySelectIOS}
+        onPress={() => {
+          picker.current?.togglePicker(true);
+        }}>
+        <View pointerEvents="none">
+          <RNPickerSelect
+            ref={picker}
+            items={[
+              {label: 'Cao', value: Priority.High, key: 1},
+              {label: 'Trung bình', value: Priority.Med, key: 2},
+              {label: 'Thấp', value: Priority.Low, key: 3},
+            ]}
+            style={{viewContainer: {height: 0}}}
+            onValueChange={changeValue}
+            value={form.priority}
+          />
+        </View>
+      </Pressable>
+    );
+  }
   return (
     <RNPickerSelect
       ref={picker}
@@ -275,9 +296,16 @@ const styles = StyleSheet.create({
     color: '#000000',
     fontWeight: '500',
     padding: 0,
+    flex: 2,
   },
   button: {
     backgroundColor: '#21AB3B',
+  },
+  cotainer: {alignItems: 'center', marginTop: 22},
+  prioritySelectIOS: {
+    flex: 1,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
 });
 
